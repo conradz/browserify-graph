@@ -1,0 +1,64 @@
+#!/usr/bin/env node
+
+var detective = require('detective'),
+    resolve = require('browser-resolve'),
+    fs = require('fs'),
+    path = require('path'),
+    async = require('async'),
+    archy = require('archy');
+
+if (process.argv.length < 3) {
+    console.error('Usage: browserify-graph <file>');
+    console.error('Prints out a graph of all modules a file depends on');
+    console.error('Uses the same dependency resolution as browserify');
+    process.exit(1);
+}
+
+var IS_CORE = /^[^\\\/]+$/,
+    file = path.resolve(process.argv[2]),
+    basedir = path.dirname(file);
+
+get(file, done);
+
+function get(file, callback) {
+    if (IS_CORE.test(file)) {
+        return callback(null, { label: file + ' - builtin', nodes: [] });
+    }
+
+    file = path.resolve(file);
+    fs.readFile(file, 'utf8', read);
+
+    function read(err, contents) {
+        if (err) {
+            return callback(err);
+        }
+
+        var requires = detective(contents);
+        async.map(requires, getDep, gotDeps);
+    }
+
+    function getDep(name, callback) {
+        resolve(name, { filename: file }, resolved);
+
+        function resolved(err, p) {
+            if (err) {
+                return callback(err);
+            }
+
+            return get(p, callback);
+        }
+    }
+
+    function gotDeps(err, deps) {
+        if (err) {
+            return callback(err);
+        }
+
+        callback(null, { label: path.relative(basedir, file), nodes: deps });
+    }
+}
+
+function done(err, data) {
+    if (err) throw err;
+    console.log(archy(data));
+}

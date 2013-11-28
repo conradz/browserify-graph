@@ -1,0 +1,31 @@
+{
+  "name": "browserify-graph",
+  "version": "0.0.0",
+  "description": "Print a graph of all modules a file depends on",
+  "dependencies": {
+    "archy": "~0.0.2",
+    "async": "~0.2.9",
+    "browser-resolve": "~1.2.0",
+    "detective": "~2.2.0"
+  },
+  "devDependencies": {},
+  "bin": {
+    "browserify-graph": "browserify-graph"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/conradz/browserify-graph.git"
+  },
+  "keywords": [
+    "browserify",
+    "dependencies",
+    "dependency",
+    "graph"
+  ],
+  "author": "Conrad Zimmerman <me@conradz.com>",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/conradz/browserify-graph/issues"
+  },
+  "homepage": "https://github.com/conradz/browserify-graph"
+}
