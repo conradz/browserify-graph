@@ -1,12 +1,14 @@
 {
   "name": "browserify-graph",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Print a graph of all modules a file depends on",
   "dependencies": {
     "archy": "~0.0.2",
     "async": "~0.2.9",
     "browser-resolve": "~1.2.0",
-    "detective": "~2.2.0"
+    "detective": "~2.2.0",
+    "graceful-fs": "^3.0.7",
+    "optimist": "^0.6.1"
   },
   "devDependencies": {},
   "bin": {
