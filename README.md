@@ -16,3 +16,9 @@ recursively search for required files.
     browserify-graph <file>
 
 Outputs a graph of all required files, starting at `<file>`.
+
+Optionally, you can specify:
+    --depth/-d <depth> #only go depth levels deep in the graph
+    --noExternal don't walk external dependencies (anything with node_modules in the path)
+
+    browserify-graph --depth <depth> --noExternal <file>

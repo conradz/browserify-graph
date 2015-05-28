@@ -2,38 +2,66 @@
 
 var detective = require('detective'),
     resolve = require('browser-resolve'),
-    fs = require('fs'),
+    fs = require('graceful-fs'),
     path = require('path'),
     async = require('async'),
-    archy = require('archy');
+    archy = require('archy'),
+    optimist = require('optimist');
 
-if (process.argv.length < 3) {
-    console.error('Usage: browserify-graph <file>');
-    console.error('Prints out a graph of all modules a file depends on');
-    console.error('Uses the same dependency resolution as browserify');
-    process.exit(1);
-}
+var usageString = 'Usage: browserify-graph -d [depth] <file>'
+                + '\nPrints out a graph of all modules a file depends on'
+                + '\nUses the same dependency resolution as browserify';
+
+var argv = optimist
+    .usage(usageString)
+    .alias('depth', 'd')
+    .boolean(['noExternal'])
+    .describe('noExternal', 'Don\'t walk external dependencies')
+    .demand(1)
+    .argv;
 
 var IS_CORE = /^[^\\\/]+$/,
-    file = path.resolve(process.argv[2]),
-    basedir = path.dirname(file);
+    file = path.resolve(argv._[0]),
+    basedir = path.dirname(file),
+    maxDepth = argv.depth || -1,
+    cache = {};
 
-get(file, done);
+get(file, done, 0);
 
-function get(file, callback) {
+function get(file, callback, level) {
     if (IS_CORE.test(file)) {
         return callback(null, { label: file + ' - builtin', nodes: [] });
     }
 
     file = path.resolve(file);
-    fs.readFile(file, 'utf8', read);
+
+    if(argv['noExternal'] && file.indexOf('node_modules') >= 0) {
+        return callback(null, { label: file + ' - external', nodes: [] });
+    }
+
+    if(maxDepth > 0 && level >= maxDepth) {
+        return callback(null, { label: path.relative(basedir, file), nodes: [] });
+    }
+    
+    if(typeof cache[file] === 'undefined' || !cache[file]) {
+        cache[file] = {};
+        fs.readFile(file, 'utf8', read);
+    } else {
+        read(null, null);
+    }
 
     function read(err, contents) {
         if (err) {
             return callback(err);
         }
-
-        var requires = detective(contents);
+        
+        var requires = [];
+        if(typeof cache[file] === 'undefined' || !cache[file] || !cache[file].requires) {
+            requires = detective(contents);
+            cache[file].requires = requires;
+        } else {
+            requires = cache[file].requires;
+        }
         async.map(requires, getDep, gotDeps);
     }
 
@@ -45,7 +73,7 @@ function get(file, callback) {
                 return callback(err);
             }
 
-            return get(p, callback);
+            return get(p, callback, level + 1);
         }
     }
 
